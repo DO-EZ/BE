@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from schema.captcha import CaptchaRequest, CaptchaResponse
+
 from model.predict import mock_predict
+from schema.captcha import CaptchaRequest, CaptchaResponse
 from utils.id_gen import generate_captcha_id
 
 app = FastAPI()
@@ -16,13 +17,16 @@ app.add_middleware(
 
 captcha_store = {}
 
+
 @app.get("/captcha")
 def get_captcha():
     from random import randint
-    expected = str(randint(0, 9))  
+
+    expected = str(randint(0, 9))
     captcha_id = generate_captcha_id()
     captcha_store[captcha_id] = expected
     return {"id": captcha_id, "expected": expected}
+
 
 @app.post("/predict", response_model=CaptchaResponse)
 def predict_captcha(request: CaptchaRequest):
@@ -32,10 +36,8 @@ def predict_captcha(request: CaptchaRequest):
 
     result = mock_predict(request.image, expected)
 
-    return CaptchaResponse(
-        passed=result,
-        message="성공" if result else "실패"
-    )
+    return CaptchaResponse(passed=result, message="성공" if result else "실패")
+
 
 @app.get("/health")
 def health():
