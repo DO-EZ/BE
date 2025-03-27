@@ -1,0 +1,67 @@
+name: Deploy FastAPI to DockerHub
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Log in to DockerHub
+      - name: Log in to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Set up Docker Buildx (multi-platform builds)
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # Get current version, increment it and create a new tag
+      - name: Get current version and increment it
+        id: version
+        run: |
+          # Get the last tag
+          VERSION=$(git describe --tags --abbrev=0)
+          echo "Current version: $VERSION"
+
+          # Increment patch version
+          # You can modify this for major/minor changes as well
+          NEW_VERSION=$(echo $VERSION | awk -F. -v OFS=. '{$NF++;print}')
+          echo "New version: $NEW_VERSION"
+
+          # Create a new tag for versioning
+          git tag $NEW_VERSION
+          echo "New tag created: $NEW_VERSION"
+
+          # Push the new tag to GitHub
+          git push origin $NEW_VERSION
+
+          # Set the output variable for later use
+          echo "::set-output name=version::$NEW_VERSION"
+
+      # Build the Docker image
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}:${{ steps.version.outputs.version }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}:latest
+            ${{ secrets.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}:${{ steps.version.outputs.version }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}:buildcache,mode=max
