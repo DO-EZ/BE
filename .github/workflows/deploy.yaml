@@ -1,5 +1,8 @@
 name: Deploy FastAPI to DockerHub
 
+permissions:
+  contents: write
+
 on:
   push:
     branches:
