@@ -5,11 +5,7 @@ from utils.id_gen import generate_captcha_id
 from PIL import Image
 from torchvision import transforms
 from models.models import HybridCNN
-import mlflow ,mlflow.pytorch
-import base64
-import io
-import torch
-import traceback
+import mlflow, mlflow.pytorch, base64, io, torch, os, traceback
 
 router = APIRouter()
 
@@ -26,15 +22,49 @@ model.eval()
 # 메모리 기반 문제 저장소 (임시용)
 captcha_store = {}
 
-def decode_image(image_base64: str) -> torch.Tensor:
+# base64 이미지 데이터 중심 정렬 전처리
+def center_image(image: Image.Image, padding: int = 20) -> Image.Image:
+    import numpy as np
+    from PIL import ImageOps
+
+    img_array = np.array(image)
+    if img_array.max() == 0:
+        return image 
+
+    img_array = (img_array < 200).astype(np.uint8)
+    coords = np.argwhere(img_array)
+    y0, x0 = coords.min(axis=0)
+    y1, x1 = coords.max(axis=0) + 1
+    cropped = image.crop((x0, y0, x1, y1))
+    
+    padded_image = ImageOps.expand(cropped, border=padding // 2, fill=255)
+    max_dim = max(padded_image.size)
+    squared_image = ImageOps.pad(padded_image, (max_dim, max_dim), color=255)
+
+    return squared_image
+
+#  base64 이미지 데이터 -> PyTorch 모델 입력용 텐서
+def decode_image(image_base64: str, captcha_id: str = None) -> torch.Tensor:
     header, encoded = image_base64.split(",", 1)
     image_bytes = base64.b64decode(encoded)
-    image = Image.open(io.BytesIO(image_bytes)).convert("L")  # grayscale
+    original_image = Image.open(io.BytesIO(image_bytes)).convert("L")
+
+    centered_image = center_image(original_image, padding=20)
+
+    if captcha_id:
+        save_dir = "saved_images"
+        os.makedirs(save_dir, exist_ok=True)
+        filename = f"captcha_{captcha_id}.png"
+        save_path = os.path.join(save_dir, filename)
+        centered_image.save(save_path)
+
     transform = transforms.Compose([
         transforms.Resize((28, 28)),
-        transforms.ToTensor()
+        transforms.Grayscale(num_output_channels=1),
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
     ])
-    return transform(image).unsqueeze(0)  # shape: (1, 1, 28, 28)
+    return transform(centered_image).unsqueeze(0)  # shape: (1, 1, 28, 28)
 
 @router.get("/captcha")
 def get_captcha():
@@ -53,11 +83,9 @@ def predict(req: CaptchaRequest, request: Request):
         return JSONResponse(status_code=400, content={"passed": False, "message": "캡차 ID 없음"})
 
     try:
-        image_tensor = decode_image(req.image).to(device)
-        print(f"[이미지] shape: {image_tensor.shape}") #######
+        image_tensor = decode_image(req.image, captcha_id=req.id).to(device)
         prediction = model(image_tensor)
         predicted_digit = torch.argmax(prediction, dim=1).item()
-        print(f"[예측값] {predicted_digit} / 정답: {expected}") #########
         
         passed = str(predicted_digit) == expected
         if passed:
