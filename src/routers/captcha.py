@@ -4,7 +4,7 @@ from schemas.captcha import CaptchaRequest, CaptchaResponse
 from utils.id_gen import generate_captcha_id
 from PIL import Image
 from torchvision import transforms
-from models.models import SimpleCNN
+from models.models import HybridCNN
 import mlflow ,mlflow.pytorch
 import base64
 import io

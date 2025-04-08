@@ -1,1 +1,1 @@
-from .models import SimpleCNN
+from .models import HybridCNN
