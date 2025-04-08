@@ -13,8 +13,15 @@ import traceback
 
 router = APIRouter()
 
+# 디바이스 설정
+device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+
 mlflow.set_tracking_uri("http://localhost:5001") # mlflow 주소
-model = mlflow.pytorch.load_model("models:/mnist-digit-captcha@production")
+
+# 모델 불러오기 및 디바이스 이동
+model = mlflow.pytorch.load_model("models:/HybridCNN@production")
+model.to(device)
+model.eval()
 
 # 메모리 기반 문제 저장소 (임시용)
 captcha_store = {}
@@ -46,7 +53,7 @@ def predict(req: CaptchaRequest, request: Request):
         return JSONResponse(status_code=400, content={"passed": False, "message": "캡차 ID 없음"})
 
     try:
-        image_tensor = decode_image(req.image)
+        image_tensor = decode_image(req.image).to(device)
         print(f"[이미지] shape: {image_tensor.shape}") #######
         prediction = model(image_tensor)
         predicted_digit = torch.argmax(prediction, dim=1).item()
@@ -59,7 +66,15 @@ def predict(req: CaptchaRequest, request: Request):
         else:
             return CaptchaResponse(passed=False, message="❌ 실패 (예측값: " + str(predicted_digit) + ")")
     except Exception as e:
-        return JSONResponse(status_code=500,content={"passed": False,"message": "서버 오류 발생","detail": traceback.format_exc()})
+        print("[서버 오류]", traceback.format_exc())
+        return JSONResponse(
+            status_code=500,
+            content={
+                "passed": False,
+                "message": "서버 오류 발생",
+                "detail": traceback.format_exc()
+            }
+        )
 
 @router.get("/check")
 def check_captcha(request: Request):
