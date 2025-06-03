@@ -3,6 +3,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
+from starlette_exporter import PrometheusMiddleware, handle_metrics
 
 from routers import captcha, image_dataset, model
 
@@ -22,12 +23,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Prometheus 미들웨어
+app.add_middleware(
+    PrometheusMiddleware,
+    app_name="captcha",
+    prefix="captcha_",
+)
+
 # 세션 미들웨어 (캡차 통과 여부 등 저장용)
 app.add_middleware(
     SessionMiddleware,
     secret_key="super-secret-key",
     max_age=3600,  # 세션 유지 시간 (초)
 )
+
+# Prometheus가 스크랩할 수 있도록 핸들러 연결
+app.add_route("/metrics", handle_metrics)
 
 # 라우터 등록
 app.include_router(captcha.router)
