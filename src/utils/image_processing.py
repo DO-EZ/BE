@@ -50,7 +50,7 @@ def decode_image(image_base64: str, captcha_id: str = None) -> torch.Tensor:
     centered_image = center_image(original_image, padding=20)
 
     if captcha_id:
-        save_dir = "/static/images"
+        save_dir = "static/images"
         os.makedirs(save_dir, exist_ok=True)
         filename = f"captcha_{captcha_id}.png"
         centered_image.save(os.path.join(save_dir, filename))

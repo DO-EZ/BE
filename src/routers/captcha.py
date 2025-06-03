@@ -8,7 +8,9 @@ from schemas.captcha import CaptchaRequest, CaptchaResponse
 from utils.id_gen import generate_captcha_id
 from utils.image_processing import decode_image
 
-router = APIRouter()
+router = APIRouter(
+    tags=["Captcha"],
+)
 
 REMOTE_ML_SERVICE_URL = os.getenv("REMOTE_ML_SERVICE_URL")
 
@@ -16,7 +18,7 @@ REMOTE_ML_SERVICE_URL = os.getenv("REMOTE_ML_SERVICE_URL")
 captcha_store = {}
 
 
-@router.get("/captcha")
+@router.get("/captcha", summary="숫자 랜덤 생성")
 def get_captcha():
     from random import randint
 
@@ -26,7 +28,7 @@ def get_captcha():
     return {"id": captcha_id, "expected": expected}
 
 
-@router.post("/predict")
+@router.post("/predict", summary="유저 입력 이미지 추론")
 async def predict(req: CaptchaRequest, request: Request):
     expected = captcha_store.get(req.id)
     if not expected:
@@ -58,7 +60,7 @@ async def predict(req: CaptchaRequest, request: Request):
         raise HTTPException(status_code=500, detail="서버 오류 발생")
 
 
-@router.get("/check")
+@router.get("/check", summary="이미지 가부 결정")
 def check_captcha(request: Request):
     if request.session.get("captcha_passed"):
         return {"access": "granted"}

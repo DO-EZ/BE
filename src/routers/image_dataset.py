@@ -5,12 +5,14 @@ import zipfile
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
-router = APIRouter()
+router = APIRouter(
+    tags=["Image"],
+)
 
-SAVED_DIR = "/static/images"  # CAPTCHA 이미지가 저장된 디렉터리
+SAVED_DIR = "static/images"  # CAPTCHA 이미지가 저장된 디렉터리
 
 
-@router.get("/images")
+@router.get("/images", summary="이미지 파일 다운로드")
 async def download_captcha_images_zip():
     if not os.path.isdir(SAVED_DIR):
         zbuf = io.BytesIO()

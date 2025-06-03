@@ -14,6 +14,7 @@ dependencies = [
     "pillow>=11.2.1",
     "pydantic>=2.10.6",
     "python-multipart>=0.0.20",
+    "routers>=0.10.1",
     "torchvision>=0.22.0",
     "uvicorn>=0.34.0",
 ]

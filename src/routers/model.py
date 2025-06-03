@@ -6,7 +6,7 @@ import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-router = APIRouter()
+router = APIRouter(tags=["Model"])
 
 REMOTE_ML_SERVICE_URL = os.getenv("REMOTE_ML_SERVICE_URL")
 
@@ -15,16 +15,13 @@ class InferenceRequest(BaseModel):
     inputs: List[List[float]]
 
 
-@router.get("/")
+@router.get("/", summary="루트 디렉토리")
 async def read_root():
     return {"message": "MLflow FastAPI Model Serving Server is running 🚀"}
 
 
-@router.get("/models/")
+@router.get("/models/", summary="등록된 모델 목록 반환")
 async def list_models():
-    """
-    등록된 모델 목록 반환
-    """
     remote_url = f"{REMOTE_ML_SERVICE_URL}/models/"
     try:
         async with httpx.AsyncClient() as client:
@@ -36,11 +33,8 @@ async def list_models():
         raise HTTPException(status_code=500, detail=f"Error listing models: {e}")
 
 
-@router.get("/models/{model_name}/versions/")
+@router.get("/models/{model_name}/versions/", summary="특정 모델의 버전 목록 반환")
 async def list_model_versions(model_name: str):
-    """
-    특정 모델의 버전 목록 반환
-    """
     remote_url = f"{REMOTE_ML_SERVICE_URL}/models/{model_name}/versions/"
     try:
         async with httpx.AsyncClient() as client:
@@ -54,7 +48,11 @@ async def list_model_versions(model_name: str):
         )
 
 
-@router.post("/models/predict/{model_name}/", include_in_schema=False)
+@router.post(
+    "/models/predict/{model_name}/",
+    include_in_schema=False,
+    summary="버전 미지정 모델 예측",
+)
 async def predict_without_version(model_name: str, request: InferenceRequest):
     remote_url = f"{REMOTE_ML_SERVICE_URL}/models/predict/{model_name}/"
     try:
@@ -68,7 +66,11 @@ async def predict_without_version(model_name: str, request: InferenceRequest):
         raise HTTPException(status_code=500, detail=f"Prediction failed: {e}")
 
 
-@router.post("/models/predict/{model_name}/{version}/", include_in_schema=False)
+@router.post(
+    "/models/predict/{model_name}/{version}/",
+    include_in_schema=False,
+    summary="버전 지정 모델 예측",
+)
 async def predict_with_version(
     model_name: str, version: str, request: InferenceRequest
 ):
