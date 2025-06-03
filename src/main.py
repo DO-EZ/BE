@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
-from routers import captcha, model
+from routers import captcha, image_dataset, model
 
 app = FastAPI()
 
@@ -32,3 +32,4 @@ app.add_middleware(
 # 라우터 등록
 app.include_router(captcha.router)
 app.include_router(model.router)
+app.include_router(image_dataset.router)
