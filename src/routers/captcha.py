@@ -4,6 +4,7 @@ import os
 import time
 
 import httpx
+import numpy as np
 from fastapi import APIRouter, HTTPException, Request
 from prometheus_client import Counter, Gauge, Histogram
 
@@ -16,6 +17,7 @@ router = APIRouter(
 )
 
 REMOTE_ML_SERVICE_URL = os.getenv("REMOTE_ML_SERVICE_URL")
+print(f"🔍 REMOTE_ML_SERVICE_URL 환경변수: {REMOTE_ML_SERVICE_URL}")
 
 # 메모리 기반 문제 저장소 (임시용)
 captcha_store = {}
@@ -130,7 +132,9 @@ async def predict(req: CaptchaRequest, request: Request):
         raise HTTPException(status_code=400, detail="유효하지 않은 캡차 ID입니다.")
 
     try:
+
         image_input = decode_image(req.image, captcha_id=req.id)
+        headers = {"Content-Type": "application/json"}
         payload = {"inputs": image_input.tolist()}
 
         # 요청 페이로드 크기 기록
@@ -138,10 +142,10 @@ async def predict(req: CaptchaRequest, request: Request):
         REQUEST_PAYLOAD_SIZE.labels(endpoint=endpoint).set(payload_size)
 
         # 원격 ML 서비스의 HybridCNN 모델 예측 API 호출
-        remote_url = f"{REMOTE_ML_SERVICE_URL}/models/predict/HybridCNN/"
+        remote_url = f"{REMOTE_ML_SERVICE_URL}/invocations"
         async with httpx.AsyncClient() as client:
             ml_start = time.monotonic()
-            response = await client.post(remote_url, json=payload)
+            response = await client.post(remote_url, json=payload, headers=headers)
             ml_duration = time.monotonic() - ml_start
 
             REMOTE_ML_LATENCY.labels(model="HybridCNN", method=method).observe(
@@ -157,7 +161,8 @@ async def predict(req: CaptchaRequest, request: Request):
                     model="HybridCNN", method=method, status=str(response.status_code)
                 ).inc()
 
-        predicted_digit = result["predictions"][0]
+        logits = result["predictions"][0]
+        predicted_digit = int(np.argmax(logits))
         passed = str(predicted_digit) == expected
 
         status = str(response.status_code)

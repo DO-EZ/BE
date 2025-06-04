@@ -1,5 +1,8 @@
 import os
+from pathlib import Path
 
+# 원격 ML 서비스 URL
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
@@ -7,12 +10,11 @@ from starlette_exporter import PrometheusMiddleware, handle_metrics
 
 from routers import captcha, image_dataset, model
 
+env_path = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
 app = FastAPI()
 
-# 원격 ML 서비스 URL
-os.environ["REMOTE_ML_SERVICE_URL"] = (
-    "http://remote-mlflow-server"  # 실제 서버 주소로 변경
-)
+print("REMOTE_ML_SERVICE_URL =", os.getenv("REMOTE_ML_SERVICE_URL"))
 
 # CORS 설정 (프론트와 통신 허용)
 app.add_middleware(

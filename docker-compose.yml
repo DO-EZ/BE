@@ -4,6 +4,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: fastapi_app
+    env_file:
+      - .env
     ports:
       - "8000:8000"
     volumes:
@@ -19,7 +21,7 @@ services:
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
+      - "--config.file=/etc/prometheus/prometheus.yml"
     networks:
       - monitoring
     depends_on:
