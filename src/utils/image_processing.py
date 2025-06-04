@@ -7,6 +7,8 @@ import torch
 from PIL import Image, ImageOps
 from torchvision import transforms
 
+from routers.image_dataset import captcha_store
+
 
 def center_image(image: Image.Image, padding: int = 20) -> Image.Image:
     img_array = np.array(image)
@@ -28,7 +30,9 @@ def center_image(image: Image.Image, padding: int = 20) -> Image.Image:
     return squared_image
 
 
-def decode_image(image_base64: str, captcha_id: str = None) -> torch.Tensor:
+def decode_image(
+    image_base64: str, captcha_id: str = None, label: str = None
+) -> torch.Tensor:
     try:
         # 기대하는 포맷: "data:image/png;base64,...."
         header, encoded = image_base64.split(",", 1)
@@ -54,6 +58,9 @@ def decode_image(image_base64: str, captcha_id: str = None) -> torch.Tensor:
         os.makedirs(save_dir, exist_ok=True)
         filename = f"captcha_{captcha_id}.png"
         centered_image.save(os.path.join(save_dir, filename))
+
+        if label:
+            captcha_store[filename] = label
 
     transform = transforms.Compose(
         [

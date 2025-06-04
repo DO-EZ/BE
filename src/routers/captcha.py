@@ -133,7 +133,7 @@ async def predict(req: CaptchaRequest, request: Request):
 
     try:
 
-        image_input = decode_image(req.image, captcha_id=req.id)
+        image_input = decode_image(req.image, captcha_id=req.id, label=expected)
         headers = {"Content-Type": "application/json"}
         payload = {"inputs": image_input.tolist()}
 
