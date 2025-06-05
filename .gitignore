@@ -10,5 +10,5 @@ wheels/
 .venv
 .env
 
-
-saved_images/
+# 이미지 파일 예외처리
+static/
