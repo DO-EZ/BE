@@ -5,11 +5,12 @@ from typing import List
 import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from src.utils.model_loader import load_model, predict_digit
+import torch
 
 router = APIRouter()
 
-REMOTE_ML_SERVICE_URL = os.getenv("REMOTE_ML_SERVICE_URL")
-
+model = load_model
 
 class InferenceRequest(BaseModel):
     inputs: List[List[float]]
