@@ -161,7 +161,12 @@ async def predict(req: CaptchaRequest, request: Request):
                     model="HybridCNN", method=method, status=str(response.status_code)
                 ).inc()
 
-        logits = result["predictions"][0]
+        # MLflow 응답 포맷이 유동적일 경우
+        if "predictions" in result:
+            logits = result["predictions"][0]
+        else:
+            logits = result[0]
+
         predicted_digit = int(np.argmax(logits))
         passed = str(predicted_digit) == expected
 
