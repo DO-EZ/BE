@@ -7,7 +7,7 @@ import torch
 from PIL import Image, ImageOps
 from torchvision import transforms
 
-from routers.captcha import captcha_store
+from utils.store import captcha_store
 
 
 def center_image(image: Image.Image, padding: int = 20) -> Image.Image:

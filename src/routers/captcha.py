@@ -11,6 +11,7 @@ from prometheus_client import Counter, Gauge, Histogram
 from schemas.captcha import CaptchaRequest, CaptchaResponse
 from utils.id_gen import generate_captcha_id
 from utils.image_processing import decode_image
+from utils.store import captcha_store
 
 router = APIRouter(
     tags=["Captcha"],
@@ -18,9 +19,6 @@ router = APIRouter(
 
 REMOTE_ML_SERVICE_URL = os.getenv("REMOTE_ML_SERVICE_URL")
 print(f"🔍 REMOTE_ML_SERVICE_URL 환경변수: {REMOTE_ML_SERVICE_URL}")
-
-# 메모리 기반 문제 저장소 (임시용)
-captcha_store = {}
 
 # ==============================
 # Prometheus 메트릭 정의
