@@ -7,7 +7,7 @@ import torch
 from PIL import Image, ImageOps
 from torchvision import transforms
 
-from routers.image_dataset import captcha_store
+from utils.store import captcha_store
 
 
 def center_image(image: Image.Image, padding: int = 20) -> Image.Image:
@@ -56,11 +56,9 @@ def decode_image(
     if captcha_id:
         save_dir = "static/images"
         os.makedirs(save_dir, exist_ok=True)
-        filename = f"captcha_{captcha_id}.png"
+        label = captcha_store[captcha_id]
+        filename = f"captcha_{captcha_id}_{label}.png"
         centered_image.save(os.path.join(save_dir, filename))
-
-        if label:
-            captcha_store[filename] = label
 
     transform = transforms.Compose(
         [
