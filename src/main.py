@@ -19,7 +19,7 @@ print("REMOTE_ML_SERVICE_URL =", os.getenv("REMOTE_ML_SERVICE_URL"))
 # CORS 설정 (프론트와 통신 허용)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # 프론트 주소
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
