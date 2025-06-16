@@ -11,6 +11,7 @@ from prometheus_client import Counter, Gauge, Histogram
 from schemas.captcha import CaptchaRequest, CaptchaResponse
 from utils.id_gen import generate_captcha_id
 from utils.image_processing import decode_image
+from utils.store import captcha_store
 
 router = APIRouter(
     tags=["Captcha"],
@@ -18,9 +19,6 @@ router = APIRouter(
 
 REMOTE_ML_SERVICE_URL = os.getenv("REMOTE_ML_SERVICE_URL")
 print(f"🔍 REMOTE_ML_SERVICE_URL 환경변수: {REMOTE_ML_SERVICE_URL}")
-
-# 메모리 기반 문제 저장소 (임시용)
-captcha_store = {}
 
 # ==============================
 # Prometheus 메트릭 정의
@@ -161,7 +159,12 @@ async def predict(req: CaptchaRequest, request: Request):
                     model="HybridCNN", method=method, status=str(response.status_code)
                 ).inc()
 
-        logits = result["predictions"][0]
+        # MLflow 응답 포맷이 유동적일 경우
+        if "predictions" in result:
+            logits = result["predictions"][0]
+        else:
+            logits = result[0]
+
         predicted_digit = int(np.argmax(logits))
         passed = str(predicted_digit) == expected
 
