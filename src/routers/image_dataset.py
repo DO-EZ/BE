@@ -14,8 +14,6 @@ router = APIRouter(
 
 SAVED_DIR = "static/images"  # CAPTCHA 이미지가 저장된 디렉터리
 
-captcha_store = {}  # 정답 label 저장
-
 # ==============================
 # Prometheus 메트릭 정의
 # ==============================
@@ -56,21 +54,10 @@ async def download_captcha_images_zip():
         # 실제 이미지 압축
         zbuf = io.BytesIO()
         with zipfile.ZipFile(zbuf, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
-            label_lines = ["filename,label"]
-
             if os.path.isdir(SAVED_DIR):
                 for fname in os.listdir(SAVED_DIR):
-                    ext = os.path.splitext(fname)[1].lower()
-                    if ext not in {".png", ".jpg", ".jpeg", ".gif"}:
-                        continue
                     full_path = os.path.join(SAVED_DIR, fname)
                     zf.write(full_path, arcname=fname)
-
-                    label = captcha_store.get(fname, "")
-                    label_lines.append(f"{fname},{label}")
-
-            csv_content = "\n".join(label_lines)
-            zf.writestr("labels.csv", csv_content)
 
         zbuf.seek(0)
         zip_size = len(zbuf.getvalue())

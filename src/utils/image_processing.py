@@ -7,7 +7,7 @@ import torch
 from PIL import Image, ImageOps
 from torchvision import transforms
 
-from routers.image_dataset import captcha_store
+from utils.image_label_store import save_label
 
 
 def center_image(image: Image.Image, padding: int = 20) -> Image.Image:
@@ -60,7 +60,7 @@ def decode_image(
         centered_image.save(os.path.join(save_dir, filename))
 
         if label:
-            captcha_store[filename] = label
+            save_label(filename, label)
 
     transform = transforms.Compose(
         [
